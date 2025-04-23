@@ -1,0 +1,40 @@
+name = "cloudflare-worker"
+compatibility_date = "2025-02-04"
+compatibility_flags = [ "nodejs_compat" ]
+
+#[[d1_databases]]
+#binding = "DB"
+#database_name = "honc-d1-database"
+#database_id = "local-honc-d1-database"
+#migrations_dir = "drizzle/migrations"
+
+# [vars]
+# MY_VAR = "my-variable"
+
+# Workers Logs
+# Docs: https://developers.cloudflare.com/workers/observability/logs/workers-logs/
+# Configuration: https://developers.cloudflare.com/workers/observability/logs/workers-logs/#enable-workers-logs
+[observability]
+enabled = true
+
+[durable_objects]
+bindings = [
+  { name = "ACTIVE_USERS", class_name = "ActiveUsersSQLite" }
+]
+
+[[migrations]]
+tag = "v2"
+new_classes = []
+new_sqlite_classes = ["ActiveUsersSQLite"]
+
+[[kv_namespaces]]
+binding = "VISITORS"
+id = "5e802c198ef74ad6bdff5caf54fef988"
+preview_id = "ed11306cc5a14282b14178bb75fb688f"
+
+# [[r2_buckets]]
+# binding = "MY_BUCKET"
+# bucket_name = "my-bucket"
+
+# [ai]
+# binding = "AI"
