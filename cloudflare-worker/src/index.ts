@@ -62,9 +62,13 @@ app.get("/", async (c) => {
   const browserLanguage = headers.get('Accept-Language') || 'unknown';
 
   // Calculate dynamic price based on active users
-  const basePrice = 100; // Base price in USD
-  const priceMultiplier = 1 + (activeUsers * 0.1); // Price increases by 10% per active user
-  const dynamicPrice = Math.round(basePrice * priceMultiplier);
+  const basePrice = 9.15; // Base price in euros
+  // Calculate price increase based on number of active users
+  // For every 10 users, add 0.30 euros (30 cents)
+  // e.g., 10 users = +0.30€, 20 users = +0.60€, 30 users = +0.90€
+  const userGroups = Math.floor(activeUsers / 10); // How many complete groups of 10 users
+  const priceIncrease = userGroups * 0.30; // 0.30€ increase per 10 users
+  const dynamicPrice = basePrice + priceIncrease;
 
   // Track users by region
   const regionKey = `region_${today}`;
@@ -96,8 +100,7 @@ app.get("/", async (c) => {
     pricing: {
       basePrice,
       currentPrice: dynamicPrice,
-      multiplier: priceMultiplier.toFixed(2),
-      message: `Price is ${dynamicPrice}$ due to ${activeUsers} active users!`
+      message: `Price is ${dynamicPrice.toFixed(3)}€ due to ${activeUsers} active users!`
     }
   });
 });
