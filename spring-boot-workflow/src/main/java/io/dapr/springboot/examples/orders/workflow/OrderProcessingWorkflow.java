@@ -34,7 +34,7 @@ public class OrderProcessingWorkflow implements Workflow {
       ctx.getLogger().info("Let's check the if there is stock in the warehouse: " + order.getItem() + ".");
       ctx.callActivity(CheckItemsStockActivity.class.getName(), order, Order.class).await();
       ctx.getLogger().info("Let's wait for the customer to approve the order: " + order.getId());
-      order = ctx.waitForExternalEvent("Order Approved", Duration.ofMinutes(5), Order.class).await();
+      order = ctx.waitForExternalEvent("OrderApprovalRequest", Duration.ofMinutes(5), Order.class).await();
 
       order = ctx.callActivity(ShipOrderActivity.class.getName(), order, Order.class).await();
       ctx.getLogger().info("Congratulations your order is on the way: " + order.getItem() + "!");
