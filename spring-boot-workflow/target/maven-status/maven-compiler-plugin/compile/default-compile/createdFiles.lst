@@ -1,0 +1,9 @@
+io/dapr/springboot/examples/orders/OrderProcessingAppConfiguration.class
+io/dapr/springboot/examples/orders/OrdersStore.class
+io/dapr/springboot/examples/orders/Order.class
+io/dapr/springboot/examples/orders/OrdersRestController.class
+io/dapr/springboot/examples/orders/workflow/TrackOrderActivity.class
+io/dapr/springboot/examples/orders/workflow/ShipOrderActivity.class
+io/dapr/springboot/examples/orders/OrderProcessingApplication.class
+io/dapr/springboot/examples/orders/workflow/OrderProcessingWorkflow.class
+io/dapr/springboot/examples/orders/workflow/CheckItemsStockActivity.class
