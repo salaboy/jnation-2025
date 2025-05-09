@@ -1,9 +1,0 @@
-/Users/salaboy/code/salaboy/jnation-2025/spring-boot-workflow/src/main/java/io/dapr/springboot/examples/orders/Order.java
-/Users/salaboy/code/salaboy/jnation-2025/spring-boot-workflow/src/main/java/io/dapr/springboot/examples/orders/OrderProcessingAppConfiguration.java
-/Users/salaboy/code/salaboy/jnation-2025/spring-boot-workflow/src/main/java/io/dapr/springboot/examples/orders/OrderProcessingApplication.java
-/Users/salaboy/code/salaboy/jnation-2025/spring-boot-workflow/src/main/java/io/dapr/springboot/examples/orders/OrdersRestController.java
-/Users/salaboy/code/salaboy/jnation-2025/spring-boot-workflow/src/main/java/io/dapr/springboot/examples/orders/OrdersStore.java
-/Users/salaboy/code/salaboy/jnation-2025/spring-boot-workflow/src/main/java/io/dapr/springboot/examples/orders/workflow/CheckItemsStockActivity.java
-/Users/salaboy/code/salaboy/jnation-2025/spring-boot-workflow/src/main/java/io/dapr/springboot/examples/orders/workflow/OrderProcessingWorkflow.java
-/Users/salaboy/code/salaboy/jnation-2025/spring-boot-workflow/src/main/java/io/dapr/springboot/examples/orders/workflow/ShipOrderActivity.java
-/Users/salaboy/code/salaboy/jnation-2025/spring-boot-workflow/src/main/java/io/dapr/springboot/examples/orders/workflow/TrackOrderActivity.java

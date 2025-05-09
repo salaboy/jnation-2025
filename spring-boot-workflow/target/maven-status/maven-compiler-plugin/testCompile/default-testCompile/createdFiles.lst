@@ -1,5 +1,0 @@
-io/dapr/springboot/examples/orders/ProducerAppTests.class
-io/dapr/springboot/examples/orders/TestProducerApplication.class
-io/dapr/springboot/examples/orders/TestSubscriberRestController.class
-io/dapr/springboot/examples/orders/DaprTestContainersConfig.class
-io/dapr/springboot/examples/orders/DaprTestContainersConfig$1.class
