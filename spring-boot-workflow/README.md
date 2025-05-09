@@ -1,4 +1,8 @@
 ## To run
+Build: 
+```
+mvn package -DskipTests
+```
 
 ```
 mvn spring-boot:test-run
