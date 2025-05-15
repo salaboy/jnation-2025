@@ -4,6 +4,7 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 import * as schema from "./db/schema";
+import { getRandomLocation } from "./lib/locationRandomizer";
 
 import { ActiveUsersSQLite } from './activeUsers';
 
@@ -53,11 +54,20 @@ app.get("/", async (c) => {
   await c.env.VISITORS.put(uniqueKey, JSON.stringify([...uniqueVisitors]), { expirationTtl: 86400 });
 
   const ip = headers.get('cf-connecting-ip') || 'unknown';
-  const country = headers.get('cf-ipcountry') || 'unknown';
-  const city = headers.get('cf-city') || 'unknown';
-  const region = headers.get('cf-region') || 'unknown';
-  const postal = headers.get('cf-postal-code') || 'unknown';
-  const timezone = headers.get('cf-timezone') || 'unknown';
+  //Location information from the headers
+  // const country = headers.get('cf-ipcountry') || 'unknown';
+  // const city = headers.get('cf-city') || 'unknown';
+  // const region = headers.get('cf-region') || 'unknown';
+  // const postal = headers.get('cf-postal-code') || 'unknown';
+  // const timezone = headers.get('cf-timezone') || 'unknown';
+
+  //Random location information
+  const randomLocation = getRandomLocation();
+  const country = randomLocation.country;
+  const city = randomLocation.city;
+  const region = randomLocation.region;
+  const postal = randomLocation.postal;
+  const timezone = randomLocation.timezone;
 
   const browserLanguage = headers.get('Accept-Language') || 'unknown';
 
