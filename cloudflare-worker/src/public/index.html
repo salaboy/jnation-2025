@@ -133,6 +133,11 @@
         return `$${(cents / 100).toFixed(2)}`;
       }
 
+      function orderGoose(gooseId) {
+        // For now, just show an alert
+        alert(`Thank you for ordering goose #${gooseId}! This feature will be implemented soon.`);
+      }
+
       document.addEventListener("DOMContentLoaded", () => {
         let products = [];
         let d1Duration,
@@ -173,6 +178,7 @@
                   <h2>${data.goose.name}</h2>
                   <div class="price">${formatPrice(data.goose.base_price)}</div>
                   <p class="info">${data.goose.info}</p>
+                  <button onclick="orderGoose(${data.goose.id})" class="cart-button">Order Now</button>
                 </div>
               `;
             } else {
