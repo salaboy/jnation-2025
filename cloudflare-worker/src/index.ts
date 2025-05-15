@@ -1,12 +1,11 @@
-import { instrument } from "@fiberplane/hono-otel";
 import { createFiberplane, createOpenAPISpec } from "@fiberplane/hono";
-import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
-import * as schema from "./db/schema";
-import { getRandomLocation } from "./lib/locationRandomizer";
+import { getRandomLocation } from "./lib/locationProvider";
 import { calculatePrice } from "./lib/pricingCalculator";
-import { updateRegionStats } from "./lib/regionStats";
+import { updateRegionStats } from "./lib/regionMetricsCollector";
+import { trackVisitors } from "./lib/visitorTracker";
+import { getProductByRegion } from "./lib/regionProductFetcher";
 
 import { ActiveUsersSQLite } from './activeUsers';
 
@@ -31,29 +30,16 @@ app.get("/api/geese", async (c) => {
     setCookie(c, 'user_id', userId, { maxAge: 86400 }); // 24 hours
   }
 
-  // Get stub for the active users counter
-  const id = c.env.ACTIVE_USERS.idFromName('counter');
-  const activeUsersObj = c.env.ACTIVE_USERS.get(id);
-
-  // Send heartbeat to update active users
-  const activeUsersReq = new Request('https://dummy-url/heartbeat', {
-    headers: { 'X-User-ID': userId }
-  });
-  const activeUsersRes = await activeUsersObj.fetch(activeUsersReq);
-  const { activeUsers } = await activeUsersRes.json() as { activeUsers: number };
   const headers = c.req.raw.headers;
-
-  // Increment total visitor count
-  const totalVisitors = parseInt(await c.env.VISITORS.get('total') || '0') + 1;
-  await c.env.VISITORS.put('total', totalVisitors.toString());
-
-  // Track unique visitors by IP (last 24h)
-  const today = new Date().toISOString().split('T')[0];
-  const uniqueKey = `unique_${today}`;
-  const uniqueVisitors = new Set<string>((await c.env.VISITORS.get(uniqueKey, 'json') || []) as string[]);
   const visitorIp = headers.get('cf-connecting-ip');
-  if (visitorIp) uniqueVisitors.add(visitorIp);
-  await c.env.VISITORS.put(uniqueKey, JSON.stringify([...uniqueVisitors]), { expirationTtl: 86400 });
+
+  // Track visitors using the visitor tracker service
+  const visitorStats = await trackVisitors({
+    userId,
+    visitorIp,
+    activeUsersNamespace: c.env.ACTIVE_USERS,
+    visitorKV: c.env.VISITORS
+  });
 
   const ip = headers.get('cf-connecting-ip') || 'unknown';
   //Location information from the headers
@@ -74,21 +60,26 @@ app.get("/api/geese", async (c) => {
   const browserLanguage = headers.get('Accept-Language') || 'unknown';
 
   // Calculate price using the pricing calculator
-  const pricing = calculatePrice(activeUsers);
+  const pricing = calculatePrice(visitorStats.activeUsers);
 
   // Get region stats
-  const stats = await updateRegionStats(region, c.env.VISITORS, activeUsers, uniqueVisitors);
+  const stats = await updateRegionStats(region, c.env.VISITORS, visitorStats.activeUsers, visitorStats.uniqueVisitors);
+
+  // Get the goose for the current region
+  const goose = await getProductByRegion(region, c.env.DB);
 
   return c.json({
     ip,
-    country,
-    city,
-    region,
-    postal,
-    timezone,
-    browserLanguage,
+    location: {
+      country,
+      city,
+      region,
+      postal,
+      timezone,
+    },
+    goose,  // Will be null if no goose exists for this region
     stats,
-    pricing
+    browserLanguage,
   });
 });
 

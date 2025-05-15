@@ -10,3 +10,12 @@ export const users = sqliteTable("users", {
   createdAt: text("created_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
   updatedAt: text("updated_at").notNull().default(sql`(CURRENT_TIMESTAMP)`),
 });
+
+export const geese = sqliteTable("geese", {
+  id: integer("id", { mode: "number" }).primaryKey(),
+  region: text("region").notNull(),
+  name: text("name").notNull(),
+  info: text("info").notNull(),
+  base_price: integer("base_price").notNull(),
+
+});

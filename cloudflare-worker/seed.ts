@@ -9,6 +9,7 @@ import {
 import { seed } from "drizzle-seed";
 
 import * as schema from "./src/db/schema";
+import { geeseData } from "./src/db/seeds";
 import path from "node:path";
 import fs from "node:fs";
 import { config } from "dotenv";
@@ -27,11 +28,8 @@ async function seedDatabase() {
   }
 
   try {
-    // Read more about seeding here: https://orm.drizzle.team/docs/seed-overview#drizzle-seed
-    await seed(db, schema);
+    await db.insert(schema.geese).values(geeseData);
     console.log("✅ Database seeded successfully!");
-    if (!isProd) {
-      }
   } catch (error) {
     console.error("❌ Error seeding database:", error);
     process.exit(1);

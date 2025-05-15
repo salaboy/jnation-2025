@@ -2,11 +2,11 @@ name = "cloudflare-worker"
 compatibility_date = "2025-02-04"
 compatibility_flags = [ "nodejs_compat" ]
 
-#[[d1_databases]]
-#binding = "DB"
-#database_name = "honc-d1-database"
-#database_id = "local-honc-d1-database"
-#migrations_dir = "drizzle/migrations"
+[[d1_databases]]
+binding = "DB"
+database_name = "honc-d1-database"
+database_id = "local-honc-d1-database"
+migrations_dir = "drizzle/migrations"
 
 # [vars]
 # MY_VAR = "my-variable"
