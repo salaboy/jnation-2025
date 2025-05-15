@@ -5,6 +5,8 @@ import { Hono } from "hono";
 import { getCookie, setCookie } from "hono/cookie";
 import * as schema from "./db/schema";
 import { getRandomLocation } from "./lib/locationRandomizer";
+import { calculatePrice } from "./lib/pricingCalculator";
+import { updateRegionStats } from "./lib/regionStats";
 
 import { ActiveUsersSQLite } from './activeUsers';
 
@@ -21,7 +23,7 @@ function generateUserId() {
   return crypto.randomUUID();
 }
 
-app.get("/", async (c) => {
+app.get("/api/geese", async (c) => {
   // Get or create user ID from cookie
   let userId = getCookie(c, 'user_id');
   if (!userId) {
@@ -71,27 +73,11 @@ app.get("/", async (c) => {
 
   const browserLanguage = headers.get('Accept-Language') || 'unknown';
 
-  // Calculate dynamic price based on active users
-  const basePrice = 9.15; // Base price in euros
-  // Calculate price increase based on number of active users
-  // For every 10 users, add 0.30 euros (30 cents)
-  // e.g., 10 users = +0.30€, 20 users = +0.60€, 30 users = +0.90€
-  const userGroups = Math.floor(activeUsers / 10); // How many complete groups of 10 users
-  const priceIncrease = userGroups * 0.30; // 0.30€ increase per 10 users
-  const dynamicPrice = basePrice + priceIncrease;
+  // Calculate price using the pricing calculator
+  const pricing = calculatePrice(activeUsers);
 
-  // Track users by region
-  const regionKey = `region_${today}`;
-  const regionCounts = JSON.parse(await c.env.VISITORS.get(regionKey) || '{}') as Record<string, number>;
-  if (region !== 'unknown') {
-    regionCounts[region] = (regionCounts[region] || 0) + 1;
-    await c.env.VISITORS.put(regionKey, JSON.stringify(regionCounts), { expirationTtl: 86400 });
-  }
-
-  // Get the most active region
-  const mostActiveRegion = Object.entries(regionCounts)
-    .sort(([, a], [, b]) => b - a)
-    .map(([region]) => region)[0] || 'None';
+  // Get region stats
+  const stats = await updateRegionStats(region, c.env.VISITORS, activeUsers, uniqueVisitors);
 
   return c.json({
     ip,
@@ -101,17 +87,8 @@ app.get("/", async (c) => {
     postal,
     timezone,
     browserLanguage,
-    stats: {
-      totalVisitors,
-      uniqueVisitorsToday: uniqueVisitors.size,
-      currentlyActive: activeUsers,
-      mostActiveRegion
-    },
-    pricing: {
-      basePrice,
-      currentPrice: dynamicPrice,
-      message: `Price is ${dynamicPrice.toFixed(3)}€ due to ${activeUsers} active users!`
-    }
+    stats,
+    pricing
   });
 });
 

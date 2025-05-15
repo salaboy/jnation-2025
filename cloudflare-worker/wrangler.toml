@@ -17,6 +17,10 @@ compatibility_flags = [ "nodejs_compat" ]
 [observability]
 enabled = true
 
+[assets]
+directory = "./src/public"
+binding = "ASSETS"
+
 [durable_objects]
 bindings = [
   { name = "ACTIVE_USERS", class_name = "ActiveUsersSQLite" }
