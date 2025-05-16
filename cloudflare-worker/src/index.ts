@@ -74,14 +74,15 @@ app.get("/api/geese", async (c) => {
 
   const browserLanguage = headers.get('Accept-Language') || 'unknown';
 
-  // Calculate price using the pricing calculator
-  const pricing = calculatePrice(visitorStats.activeUsers);
 
   // Get region stats
   const stats = await updateRegionStats(region, c.env.VISITORS, visitorStats.activeUsers, visitorStats.uniqueVisitors);
 
   // Get the goose for the current region
   const goose = await getProductByRegion(region, c.env.DB);
+
+    // Calculate price using the pricing calculator
+    const pricing = calculatePrice(visitorStats.activeUsers, goose?.base_price ?? 0.5); // Default price if no goose found
 
   return c.json({
     ip,
@@ -92,6 +93,7 @@ app.get("/api/geese", async (c) => {
       postal,
       timezone,
     },
+    pricing,
     goose,  // Will be null if no goose exists for this region
     stats,
     browserLanguage,
@@ -121,14 +123,6 @@ app.post("/update-order", async (c) => {
   
   const responseData = await response.json();
   return c.json(responseData as Record<string, unknown>);
-});
-
-// Endpoint to get all order updates
-app.get("/order-updates", async (c) => {
-  const stub = c.get("orderService");
-  const response = await stub.fetch(new Request("https://internal/updates"));
-  const data = await response.json() as { updates: Record<string, unknown>[] };
-  return c.json(data);
 });
 
 export { OrderUpdateService };

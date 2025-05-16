@@ -16,13 +16,13 @@ const DEFAULT_CONFIG: PricingConfig = {
   userGroupSize: 10
 };
 
-export function calculatePrice(activeUsers: number, config: PricingConfig = DEFAULT_CONFIG): PricingResult {
+export function calculatePrice(activeUsers: number, basePrice: number, config: PricingConfig = DEFAULT_CONFIG): PricingResult {
   const userGroups = Math.floor(activeUsers / config.userGroupSize);
   const priceIncrease = userGroups * config.increasePerUsers;
-  const currentPrice = config.basePrice + priceIncrease;
+  const currentPrice = basePrice + priceIncrease;
 
   return {
-    basePrice: config.basePrice,
+    basePrice,
     currentPrice,
     message: `Price is ${currentPrice.toFixed(3)}€ due to ${activeUsers} active users!`
   };
