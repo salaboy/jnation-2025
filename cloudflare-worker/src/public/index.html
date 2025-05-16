@@ -36,6 +36,16 @@
       function orderGoose(gooseId) {
         // For now, just show an alert
         alert(`Thank you for ordering goose #${gooseId}! This feature will be implemented soon.`);
+        fetch('http://localhost:8080/orders', {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ "id": "order-123", "item" : "goose", "amount": 1 })
+})
+   .then(response => response.json())
+   .then(response => console.log(JSON.stringify(response)))
       }
 
       document.addEventListener("DOMContentLoaded", () => {
