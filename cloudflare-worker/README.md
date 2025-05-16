@@ -1,43 +1,24 @@
 ## 🪿 HONC
 
-This is a project created with the `create-honc-app` template. 
-
-Learn more about the HONC stack on the [website](https://honc.dev) or the main [repo](https://github.com/fiberplane/create-honc-app).
-
-There is also an [Awesome HONC collection](https://github.com/fiberplane/awesome-honc) with further guides, use cases and examples.
-
-### Getting started
-[D1](https://developers.cloudflare.com/d1/) is Cloudflare's serverless SQL database. Running HONC with a D1 database involves two key steps: first, setting up the project locally, and second, deploying it in production. You can spin up your D1 database locally using Wrangler. If you're planning to deploy your application for production use, ensure that you have created a D1 instance in your Cloudflare account.
-
-### Project structure
-
-```#
-├── src
-│   ├── index.ts # Hono app entry point
-│   └── db
-│       └── schema.ts # Database schema
-├── .dev.vars.example # Example .dev.vars file
-├── .prod.vars.example # Example .prod.vars file
-├── seed.ts # Optional script to seed the db
-├── drizzle.config.ts # Drizzle configuration
-├── package.json
-├── tsconfig.json # TypeScript configuration
-└── wrangler.toml # Cloudflare Workers configuration
-```
 
 ### Commands for local development
 
-Run the migrations and (optionally) seed the database:
+Install dependencies:
 
 ```sh
+pnpm install
+```
+
+Run the db setup script:
+```sh
 # this is a convenience script that runs db:touch, db:generate, db:migrate, and db:seed
-npm run db:setup
+pnpm db:setup
 ```
 
 Run the development server:
 
 ```sh
-npm run dev
+pnpm dev
 ```
 
 As you iterate on the database schema, you'll need to generate a new migration file and apply it like so:
