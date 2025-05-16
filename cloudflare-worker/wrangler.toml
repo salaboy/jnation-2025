@@ -23,12 +23,13 @@ binding = "ASSETS"
 
 [durable_objects]
 bindings = [
-  { name = "ACTIVE_USERS", class_name = "ActiveUsersSQLite" }
+  { name = "ACTIVE_USERS", class_name = "ActiveUsersSQLite" },
+  { name = "ORDER_UPDATE_SERVICE", class_name = "OrderUpdateService" }
 ]
 
 [[migrations]]
 tag = "v2"
-new_classes = []
+new_classes = ["OrderUpdateService"]
 new_sqlite_classes = ["ActiveUsersSQLite"]
 
 [[kv_namespaces]]

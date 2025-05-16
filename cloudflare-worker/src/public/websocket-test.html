@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebSocket Order Test</title>
+    <style>
+        #messages {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            height: 300px;
+            overflow-y: auto;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .received { background-color: #e8f5e9; }
+        .error { background-color: #ffebee; }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Order Test</h1>
+    
+    <div>
+        <h3>Connect to Order</h3>
+        <input type="text" id="orderId" placeholder="Enter order ID" value="test-order-123">
+        <button onclick="connectWebSocket()">Connect</button>
+        <button onclick="disconnectWebSocket()">Disconnect</button>
+    </div>
+
+    <div>
+        <h3>Send Test Update</h3>
+        <button onclick="sendTestUpdate()">Send Update</button>
+    </div>
+
+    <div id="messages"></div>
+
+    <script>
+        let ws;
+
+        function addMessage(message, type = 'received') {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function connectWebSocket() {
+            const orderId = document.getElementById('orderId').value;
+            
+            // Close existing connection if any
+            if (ws) {
+                ws.close();
+            }
+
+            // Create new WebSocket connection
+            ws = new WebSocket(`ws://${window.location.host}/ws/order/${orderId}`);
+
+            ws.onopen = () => {
+                addMessage('WebSocket connected');
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                addMessage(`Received: ${JSON.stringify(data)}`);
+            };
+
+            ws.onerror = (error) => {
+                addMessage(`WebSocket error: ${error.message}`, 'error');
+            };
+
+            ws.onclose = () => {
+                addMessage('WebSocket disconnected', 'error');
+                ws = null;
+            };
+        }
+
+        function disconnectWebSocket() {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+        }
+
+        function sendTestUpdate() {
+            const orderId = document.getElementById('orderId').value;
+            
+            fetch('/update-order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    orderId: orderId,
+                    status: 'processing',
+                    details: {
+                        message: 'Test update',
+                        timestamp: new Date().toISOString()
+                    }
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                addMessage(`Update sent: ${JSON.stringify(data)}`);
+            })
+            .catch(error => {
+                addMessage(`Error sending update: ${error.message}`, 'error');
+            });
+        }
+    </script>
+</body>
+</html>

@@ -6,21 +6,36 @@ import { calculatePrice } from "./lib/pricingCalculator";
 import { updateRegionStats } from "./lib/regionMetricsCollector";
 import { trackVisitors } from "./lib/visitorTracker";
 import { getProductByRegion } from "./lib/regionProductFetcher";
+import { OrderUpdateService } from "./websocket/orderUpdateSocket";
+
 
 import { ActiveUsersSQLite } from './activeUsers';
+
+type Variables = {
+  orderService: DurableObjectStub;
+};
 
 type Bindings = {
   DB: D1Database;
   VISITORS: KVNamespace;
   ACTIVE_USERS: DurableObjectNamespace;
+  ORDER_UPDATE_SERVICE: DurableObjectNamespace;
 };
 
-const app = new Hono<{ Bindings: Bindings }>();
+const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // Generate a unique ID for each user session
 function generateUserId() {
   return crypto.randomUUID();
 }
+
+app.use("*", async (c, next) => {
+  const orderServiceId = c.env.ORDER_UPDATE_SERVICE.idFromName("default");
+  const orderServiceStub = c.env.ORDER_UPDATE_SERVICE.get(orderServiceId);
+  c.set("orderService", orderServiceStub);
+  
+  await next();
+});
 
 app.get("/api/geese", async (c) => {
   // Get or create user ID from cookie
@@ -82,6 +97,42 @@ app.get("/api/geese", async (c) => {
     browserLanguage,
   });
 });
+
+// New endpoints for order updates
+app.get("/ws/order/:orderId", async (c) => {
+  if (c.req.header("upgrade") !== "websocket") {
+    return c.text("Not a websocket request", 426);
+  }
+  
+  const stub = c.get("orderService");
+  return stub.fetch(c.req.raw);
+});
+
+// Endpoint to update an order status (called by your order processing system)
+app.post("/update-order", async (c) => {
+  const body = await c.req.json();
+  
+  const stub = c.get("orderService");
+  const response = await stub.fetch(new Request("https://internal/update-order", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  }));
+  
+  const responseData = await response.json();
+  return c.json(responseData as Record<string, unknown>);
+});
+
+// Endpoint to get all order updates
+app.get("/order-updates", async (c) => {
+  const stub = c.get("orderService");
+  const response = await stub.fetch(new Request("https://internal/updates"));
+  const data = await response.json() as { updates: Record<string, unknown>[] };
+  return c.json(data);
+});
+
+export { OrderUpdateService };
+
 
 
 /**
