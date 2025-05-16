@@ -14,7 +14,9 @@ limitations under the License.
 package io.dapr.springboot.examples.orders.workflow;
 
 
+import io.dapr.springboot.examples.orders.Details;
 import io.dapr.springboot.examples.orders.Order;
+import io.dapr.springboot.examples.orders.OrderUpdate;
 import io.dapr.springboot.examples.orders.OrdersStore;
 import io.dapr.workflows.WorkflowActivity;
 import io.dapr.workflows.WorkflowActivityContext;
@@ -24,6 +26,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.Date;
 
 @Component
 public class CheckItemsStockActivity implements WorkflowActivity {
@@ -44,8 +48,8 @@ public class CheckItemsStockActivity implements WorkflowActivity {
     logger.info("Item: " + order.getItem() + " is in stock.");
     order.setInStock(true);
     ordersStore.addOrder(order);
-    HttpEntity<Order> request =
-            new HttpEntity<Order>(order);
+    HttpEntity<OrderUpdate> request =
+            new HttpEntity<OrderUpdate>(new OrderUpdate(order.getId(), "Checking Stock", new Details("Checking Stock in Warehouse", new Date())));
     String orderUpdateString =
             restTemplate.postForObject("http://localhost:5000/updateOrder", request, String.class);
     logger.info("Update Order result: " + orderUpdateString );

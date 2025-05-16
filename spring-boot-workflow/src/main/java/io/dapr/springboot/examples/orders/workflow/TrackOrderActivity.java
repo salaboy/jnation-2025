@@ -14,7 +14,9 @@ limitations under the License.
 package io.dapr.springboot.examples.orders.workflow;
 
 
+import io.dapr.springboot.examples.orders.Details;
 import io.dapr.springboot.examples.orders.Order;
+import io.dapr.springboot.examples.orders.OrderUpdate;
 import io.dapr.springboot.examples.orders.OrdersStore;
 import io.dapr.workflows.WorkflowActivity;
 import io.dapr.workflows.WorkflowActivityContext;
@@ -24,6 +26,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.Date;
 
 @Component
 public class TrackOrderActivity implements WorkflowActivity {
@@ -42,8 +46,8 @@ public class TrackOrderActivity implements WorkflowActivity {
     Order order = ctx.getInput(Order.class);
     logger.info("Order: " + order.getId() + " stored for tracking.");
     ordersStore.addOrder(order);
-    HttpEntity<Order> request =
-            new HttpEntity<Order>(order);
+    HttpEntity<OrderUpdate> request =
+            new HttpEntity<OrderUpdate>(new OrderUpdate(order.getId(), "Processing", new Details("Processing the order", new Date())));
 
     String orderUpdateString =
             restTemplate.postForObject("http://localhost:5000/updateOrder", request, String.class);
