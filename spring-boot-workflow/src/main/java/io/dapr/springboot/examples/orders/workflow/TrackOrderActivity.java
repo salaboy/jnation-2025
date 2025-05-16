@@ -20,7 +20,10 @@ import io.dapr.workflows.WorkflowActivity;
 import io.dapr.workflows.WorkflowActivityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 
 @Component
 public class TrackOrderActivity implements WorkflowActivity {
@@ -32,11 +35,19 @@ public class TrackOrderActivity implements WorkflowActivity {
     this.ordersStore = ordersStore;
   }
 
+  @Autowired
+  private RestTemplate restTemplate;
   @Override
   public Object run(WorkflowActivityContext ctx) {
     Order order = ctx.getInput(Order.class);
     logger.info("Order: " + order.getId() + " stored for tracking.");
     ordersStore.addOrder(order);
+    HttpEntity<Order> request =
+            new HttpEntity<Order>(order);
+
+    String orderUpdateString =
+            restTemplate.postForObject("http://localhost:5000/updateOrder", request, String.class);
+    logger.info("Update Order result: " + orderUpdateString );
     return order;
   }
 
