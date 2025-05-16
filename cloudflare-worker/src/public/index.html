@@ -36,7 +36,8 @@
       function orderGoose(gooseId) {
         // For now, just show an alert
         alert(`Thank you for ordering goose #${gooseId}! This feature will be implemented soon.`);
-        fetch('http://localhost:8080/orders', {
+        let href = "/proxy/?apiurl=http://localhost:8080/orders"
+        fetch(window.location.origin + href, {
             method: 'POST',
             headers: {
                 'Accept': 'application/json',

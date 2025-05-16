@@ -11,6 +11,13 @@ import { OrderUpdateService } from "./websocket/orderUpdateSocket";
 
 import { ActiveUsersSQLite } from './activeUsers';
 
+// The URL for the remote third party API you want to fetch from
+// but does not implement CORS
+const API_URL = "http://localhost:8080";
+
+// The endpoint you want the CORS reverse proxy to be on
+const PROXY_ENDPOINT = "/proxy/";
+
 type Variables = {
   orderService: DurableObjectStub;
 };
@@ -30,6 +37,11 @@ function generateUserId() {
 }
 
 app.use("*", async (c, next) => {
+  // Only handle non-proxy requests with this handler
+  if (c.req.path.startsWith(PROXY_ENDPOINT)) {
+    return next();
+  }
+
   const orderServiceId = c.env.ORDER_UPDATE_SERVICE.idFromName("default");
   const orderServiceStub = c.env.ORDER_UPDATE_SERVICE.get(orderServiceId);
   c.set("orderService", orderServiceStub);
@@ -38,6 +50,10 @@ app.use("*", async (c, next) => {
 });
 
 app.get("/api/geese", async (c) => {
+  // Only handle non-proxy requests with this handler
+  if (c.req.path.startsWith(PROXY_ENDPOINT)) {
+    return next();
+  }
   // Get or create user ID from cookie
   let userId = getCookie(c, 'user_id');
   if (!userId) {
@@ -102,6 +118,10 @@ app.get("/api/geese", async (c) => {
 
 // New endpoints for order updates
 app.get("/ws/order/:orderId", async (c) => {
+  // Only handle non-proxy requests with this handler
+  if (c.req.path.startsWith(PROXY_ENDPOINT)) {
+    return next();
+  }
   if (c.req.header("upgrade") !== "websocket") {
     return c.text("Not a websocket request", 426);
   }
@@ -112,6 +132,8 @@ app.get("/ws/order/:orderId", async (c) => {
 
 // Endpoint to update an order status (called by your order processing system)
 app.post("/update-order", async (c) => {
+  // Only handle non-proxy requests with this handler
+
   const body = await c.req.json();
   
   const stub = c.get("orderService");
@@ -135,6 +157,10 @@ export { OrderUpdateService };
  */
 app.get("/openapi.json", c => {
   // @ts-expect-error - @fiberplane/hono is in beta and still not typed correctly
+  // Only handle non-proxy requests with this handler
+  if (c.req.path.startsWith(PROXY_ENDPOINT)) {
+    return next();
+  }
   return c.json(createOpenAPISpec(app, {
     openapi: "3.0.0",
     info: {
@@ -154,6 +180,64 @@ app.use("/fp/*", createFiberplane({
   openapi: { url: "/openapi.json" }
 }));
 
+// CORS proxy routes
+app.on(["GET", "HEAD", "POST", "OPTIONS"], PROXY_ENDPOINT + "*", async (c) => {
+  const url = new URL(c.req.url);
+
+  // Handle OPTIONS preflight requests
+  if (c.req.method === "OPTIONS") {
+    const origin = c.req.header("Origin");
+    const requestMethod = c.req.header("Access-Control-Request-Method");
+    const requestHeaders = c.req.header("Access-Control-Request-Headers");
+
+    if (origin && requestMethod && requestHeaders) {
+      // Handle CORS preflight requests
+      return new Response(null, {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",
+          "Access-Control-Max-Age": "86400",
+          "Access-Control-Allow-Headers": requestHeaders,
+        },
+      });
+    } else {
+      // Handle standard OPTIONS request
+      return new Response(null, {
+        headers: {
+          Allow: "GET, HEAD, POST, OPTIONS",
+        },
+      });
+    }
+  }
+
+  // Handle actual requests
+  let apiUrl = url.searchParams.get("apiurl") || API_URL;
+
+  // Rewrite request to point to API URL
+  const modifiedRequest = new Request(apiUrl, c.req.raw);
+  modifiedRequest.headers.set("Origin", new URL(apiUrl).origin);
+
+  let response = await fetch(modifiedRequest);
+
+  // Recreate the response so we can modify the headers
+  response = new Response(response.body, response);
+
+  // Set CORS headers
+  response.headers.set("Access-Control-Allow-Origin", url.origin);
+
+  // Append to/Add Vary header so browser will cache response correctly
+  response.headers.append("Vary", "Origin");
+
+  return response;
+});
+
+// Handle method not allowed for proxy endpoint
+app.all(PROXY_ENDPOINT + "*", (c) => {
+  return new Response(null, {
+    status: 405,
+    statusText: "Method Not Allowed",
+  });
+});
 
 export default app;
 

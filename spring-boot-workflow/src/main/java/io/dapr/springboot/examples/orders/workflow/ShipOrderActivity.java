@@ -53,7 +53,7 @@ public class ShipOrderActivity implements WorkflowActivity {
     HttpEntity<OrderUpdate> request =
             new HttpEntity<OrderUpdate>(new OrderUpdate(order.getId(), "Shipping", new Details("Shipping the order", new Date())));
     String orderUpdateString =
-            restTemplate.postForObject("http://localhost:5000/updateOrder", request, String.class);
+            restTemplate.postForObject("http://localhost:8787/update-order", request, String.class);
     logger.info("Update Order result: " + orderUpdateString );
     return order;
   }

@@ -50,7 +50,7 @@ public class TrackOrderActivity implements WorkflowActivity {
             new HttpEntity<OrderUpdate>(new OrderUpdate(order.getId(), "Processing", new Details("Processing the order", new Date())));
 
     String orderUpdateString =
-            restTemplate.postForObject("http://localhost:5000/updateOrder", request, String.class);
+            restTemplate.postForObject("http://localhost:8787/update-order", request, String.class);
     logger.info("Update Order result: " + orderUpdateString );
     return order;
   }

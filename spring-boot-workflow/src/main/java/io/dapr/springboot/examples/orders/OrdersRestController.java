@@ -54,11 +54,12 @@ public class OrdersRestController {
    * @return confirmation that the workflow instance was created for a given customer
    */
   @PostMapping("/orders")
-  public String placeOrder(@RequestBody Order order) {
+  public Order placeOrder(@RequestBody Order order) {
     String instanceId = daprWorkflowClient.scheduleNewWorkflow(OrderProcessingWorkflow.class, order);
     logger.info("Workflow instance " + instanceId + " started");
+    order.setWorkflowId(instanceId);
     ordersWorkflows.put(order.getId(), instanceId);
-    return "New Workflow Instance created for Order: " + order.getId();
+    return order;
   }
 
   /**
