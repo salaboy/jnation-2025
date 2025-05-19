@@ -83,6 +83,40 @@
             return null;
         }
 
+        // Function to set up WebSocket event handlers
+        function setupWebSocketHandlers(socket, orderId, isTemporary = false) {
+            socket.onmessage = (event) => {
+                console.log('Received WebSocket message:', event.data);
+                const data = JSON.parse(event.data);
+                console.log('Parsed data:', data);
+                
+                if (data.type === 'connected' && (!data.message || data.message.includes(orderId))) {
+                    addMessage('Order Created');
+                } else if (data.type === 'order-update' && (!data.orderId || data.orderId === orderId)) {
+                    addMessage(`Order Status: ${data.status}`);
+                }
+            };
+
+            socket.onerror = (error) => {
+                addMessage('Error connecting to order tracking system', 'error');
+            };
+
+            socket.onclose = () => {
+                if (!isTemporary) {
+                    addMessage('Connection to order tracking system closed', 'error');
+                }
+            };
+
+            if (!isTemporary) {
+                // Start sending pings every 5 minutes to keep connection alive
+                setInterval(() => {
+                    if (socket.readyState === WebSocket.OPEN) {
+                        socket.send(JSON.stringify({ type: 'ping' }));
+                    }
+                }, 5 * 60 * 1000); // 5 minutes
+            }
+        }
+
         // Connect to WebSocket when page loads
         document.addEventListener('DOMContentLoaded', () => {
             const orderId = getOrderIdFromUrl();
@@ -96,43 +130,30 @@
             // Try to get existing WebSocket first
             ws = getExistingWebSocket(orderId);
 
-            // Only proceed if we have an existing WebSocket connection
             if (!ws || ws.readyState !== WebSocket.OPEN) {
-                console.error('No active WebSocket connection found for this order');
-                addMessage('Error: No active connection found for this order. Please return to the main page and try again.', 'error');
+                // If no existing connection, create a temporary one to get history
+                console.log('Creating temporary WebSocket to fetch history');
+                const tempWs = new WebSocket(`ws://${window.location.host}/ws/order/${orderId}`);
+                
+                tempWs.onopen = () => {
+                    console.log('Temporary WebSocket opened to fetch history');
+                    setupWebSocketHandlers(tempWs, orderId, true);
+                };
+
+                // Close the temporary connection after we've received the history
+                setTimeout(() => {
+                    console.log('Closing temporary WebSocket');
+                    tempWs.close();
+                }, 2000);
                 return;
             }
 
             console.log('Using existing WebSocket connection');
             // Reset the order created flag
             orderCreatedShown = false;
-
-            // Start sending pings every 5 minutes to keep connection alive
-            setInterval(() => {
-                if (ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'ping' }));
-                }
-            }, 5 * 60 * 1000); // 5 minutes
-
-            ws.onmessage = (event) => {
-                console.log('Received WebSocket message:', event.data);
-                const data = JSON.parse(event.data);
-                console.log('Parsed data:', data);
-                
-                if (data.type === 'connected' && data.message.includes(orderId)) {
-                    addMessage('Order Created');
-                } else if (data.type === 'order-update' && data.orderId === orderId) {
-                    addMessage(`Order Status: ${data.status}`);
-                }
-            };
-
-            ws.onerror = (error) => {
-                addMessage('Error connecting to order tracking system', 'error');
-            };
-
-            ws.onclose = () => {
-                addMessage('Connection to order tracking system closed', 'error');
-            };
+            
+            // Set up handlers for the existing connection
+            setupWebSocketHandlers(ws, orderId, false);
         });
     </script>
 </body>

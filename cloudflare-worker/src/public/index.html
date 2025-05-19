@@ -29,14 +29,6 @@
     </footer>
 
     <script>
-      // Store WebSocket connections by order ID
-      const orderWebSockets = new Map();
-
-      // Expose function to get WebSocket for an order
-      window.getWebSocketForOrder = function(orderId) {
-        return orderWebSockets.get(orderId);
-      };
-
       function formatPrice(cents) {
         return `$${(cents / 100).toFixed(2)}`;
       }
@@ -56,9 +48,6 @@
         // First establish WebSocket connection
         const ws = new WebSocket(`ws://${window.location.host}/ws/order/${orderId}`);
         
-        // Store the WebSocket connection
-        orderWebSockets.set(orderId, ws);
-        
         ws.onopen = () => {
             console.log('WebSocket connection established, proceeding with order');
             let href = "/proxy/?apiurl=http://localhost:8080/orders"
@@ -73,13 +62,12 @@
             .then(response => response.json())
             .then(response => {
                 console.log(JSON.stringify(response));
-                // Open order status page in a new window to preserve WebSocket
-                window.open(`/order-status.html?orderId=${orderId}`, '_blank');
+                // Redirect to order status page with the order ID
+                window.location.href = `/order-status.html?orderId=${orderId}`;
             })
             .catch(error => {
                 console.error('Error placing order:', error);
                 alert('There was an error placing your order. Please try again.');
-                orderWebSockets.delete(orderId);
                 ws.close();
             });
         };
@@ -87,12 +75,6 @@
         ws.onerror = (error) => {
             console.error('WebSocket connection failed:', error);
             alert('Could not establish connection to order tracking system. Please try again.');
-            orderWebSockets.delete(orderId);
-        };
-
-        ws.onclose = () => {
-            console.log(`WebSocket connection closed for order ${orderId}`);
-            orderWebSockets.delete(orderId);
         };
       }
 
