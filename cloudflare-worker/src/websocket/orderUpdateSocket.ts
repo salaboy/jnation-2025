@@ -15,6 +15,8 @@ export class OrderUpdateService implements DurableObject {
     private orderHistory: Map<string, Array<{type: string, orderId: string, status: string, details: any, timestamp: string}>> = new Map();
     // Track session start times to avoid replaying recent updates
     private sessionStartTimes: Map<string, number> = new Map();
+    // Store updates that arrive before WebSocket connection
+    private pendingUpdates: Map<string, Array<{status: string, details: any}>> = new Map();
     
     async fetch(request: Request) {
       const url = new URL(request.url);
@@ -75,6 +77,16 @@ export class OrderUpdateService implements DurableObject {
             server.send(JSON.stringify(update));
           }
         }
+
+        // Send any pending updates that arrived before the connection
+        const pendingUpdates = this.pendingUpdates.get(orderId) || [];
+        if (pendingUpdates.length > 0) {
+          console.log(`Sending ${pendingUpdates.length} pending updates for order ${orderId}`);
+          for (const update of pendingUpdates) {
+            this.sendOrderUpdate(orderId, update.status, update.details);
+          }
+          this.pendingUpdates.delete(orderId);
+        }
         
         return new Response(null, { status: 101, webSocket: client });
       }
@@ -82,15 +94,30 @@ export class OrderUpdateService implements DurableObject {
       // Endpoint for internal systems to send order updates
       if (url.pathname === "/update-order") {
         console.log("Received update request");
-        const rawData = await request.json();
-        console.log("Update data:", rawData);
+        let rawData;
+        try {
+          rawData = await request.json();
+          console.log("Update data:", JSON.stringify(rawData, null, 2));
+        } catch (error: unknown) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.error("Failed to parse request JSON:", errorMessage);
+          return new Response(JSON.stringify({
+            error: 'Invalid JSON in request',
+            details: errorMessage
+          }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
         const result = orderUpdateSchema.safeParse(rawData);
         
         if (!result.success) {
           console.error("Invalid update data:", result.error.errors);
           return new Response(JSON.stringify({
             error: 'Invalid request data',
-            details: result.error.errors
+            details: result.error.errors,
+            receivedData: rawData
           }), {
             status: 400,
             headers: { 'Content-Type': 'application/json' }
@@ -111,8 +138,17 @@ export class OrderUpdateService implements DurableObject {
         // Send update to the specific order's connection
         const connection = this.orderConnections.get(orderId);
         if (!connection) {
-          console.log(`No connection for order ${orderId}, update will be missed`);
-          return new Response('No WebSocket connection found for this order', { status: 404 });
+          console.log(`No connection for order ${orderId}, storing update for later`);
+          if (!this.pendingUpdates.has(orderId)) {
+            this.pendingUpdates.set(orderId, []);
+          }
+          this.pendingUpdates.get(orderId)?.push({ status, details });
+          return new Response(JSON.stringify({
+            success: true,
+            message: "Update stored for later delivery"
+          }), {
+            headers: { "Content-Type": "application/json" }
+          });
         }
         
         const success = await this.sendOrderUpdate(orderId, status, details);
