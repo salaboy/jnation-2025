@@ -71,6 +71,18 @@
             return urlParams.get('orderId');
         }
 
+        // Try to get the existing WebSocket from the opener (parent window)
+        function getExistingWebSocket(orderId) {
+            try {
+                if (window.opener && window.opener.getWebSocketForOrder) {
+                    return window.opener.getWebSocketForOrder(orderId);
+                }
+            } catch (e) {
+                console.log('No existing WebSocket found:', e);
+            }
+            return null;
+        }
+
         // Connect to WebSocket when page loads
         document.addEventListener('DOMContentLoaded', () => {
             const orderId = getOrderIdFromUrl();
@@ -81,22 +93,26 @@
 
             document.getElementById('order-id').textContent = orderId;
 
-            // Create WebSocket connection
-            ws = new WebSocket(`ws://${window.location.host}/ws/order/${orderId}`);
+            // Try to get existing WebSocket first
+            ws = getExistingWebSocket(orderId);
 
-            ws.onopen = () => {
-                // Connection established, but we'll wait for the Order Created message
-                console.log('WebSocket connection established');
-                // Reset the order created flag on new connections
-                orderCreatedShown = false;
+            // Only proceed if we have an existing WebSocket connection
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                console.error('No active WebSocket connection found for this order');
+                addMessage('Error: No active connection found for this order. Please return to the main page and try again.', 'error');
+                return;
+            }
 
-                // Start sending pings every 5 minutes to keep connection alive
-                setInterval(() => {
-                    if (ws.readyState === WebSocket.OPEN) {
-                        ws.send(JSON.stringify({ type: 'ping' }));
-                    }
-                }, 5 * 60 * 1000); // 5 minutes
-            };
+            console.log('Using existing WebSocket connection');
+            // Reset the order created flag
+            orderCreatedShown = false;
+
+            // Start sending pings every 5 minutes to keep connection alive
+            setInterval(() => {
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'ping' }));
+                }
+            }, 5 * 60 * 1000); // 5 minutes
 
             ws.onmessage = (event) => {
                 console.log('Received WebSocket message:', event.data);
