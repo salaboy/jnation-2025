@@ -15,7 +15,8 @@
   <description>Spring Boot, Testcontainers and Dapr Integration Examples :: Workflow Example</description>
 
   <properties>
-    <dapr.version>0.15.0-SNAPSHOT</dapr.version>
+    <!-- <dapr.version>0.15.0-SNAPSHOT</dapr.version> -->
+    <dapr.version>0.15.0-rc-4</dapr.version>
   </properties>
   <dependencies>
     <dependency>

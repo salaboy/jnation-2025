@@ -33,20 +33,49 @@
         return `$${(cents / 100).toFixed(2)}`;
       }
 
+      function generateOrderId() {
+        // Generate UUID v4
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+          const r = Math.random() * 16 | 0;
+          const v = c == 'x' ? r : (r & 0x3 | 0x8);
+          return v.toString(16);
+        });
+      }
+
       function orderGoose(gooseId) {
-        // For now, just show an alert
-        alert(`Thank you for ordering goose #${gooseId}! This feature will be implemented soon.`);
-        let href = "/proxy/?apiurl=http://localhost:8080/orders"
-        fetch(window.location.origin + href, {
-            method: 'POST',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ "id": "test-order-123", "item" : "goose", "amount": 1 })
-})
-   .then(response => response.json())
-   .then(response => console.log(JSON.stringify(response)))
+        const orderId = generateOrderId();
+        
+        // First establish WebSocket connection
+        const ws = new WebSocket(`ws://${window.location.host}/ws/order/${orderId}`);
+        
+        ws.onopen = () => {
+            console.log('WebSocket connection established, proceeding with order');
+            let href = "/proxy/?apiurl=http://localhost:8080/orders"
+            fetch(window.location.origin + href, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ "id": orderId, "item" : "goose", "amount": 1 })
+            })
+            .then(response => response.json())
+            .then(response => {
+                console.log(JSON.stringify(response));
+                // Redirect to order status page with the order ID
+                window.location.href = `/order-status.html?orderId=${orderId}`;
+            })
+            .catch(error => {
+                console.error('Error placing order:', error);
+                alert('There was an error placing your order. Please try again.');
+                ws.close();
+            });
+        };
+        
+        ws.onerror = (error) => {
+            console.error('WebSocket connection failed:', error);
+            alert('Could not establish connection to order tracking system. Please try again.');
+        };
       }
 
       document.addEventListener("DOMContentLoaded", () => {

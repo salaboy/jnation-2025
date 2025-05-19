@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Order Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #messages {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+            background-color: #e8f5e9;
+        }
+        .error {
+            background-color: #ffebee;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Order Status</h1>
+    <div id="order-info">
+        <h2>Processing Order: <span id="order-id"></span></h2>
+    </div>
+
+    <div id="messages"></div>
+
+    <script>
+        let ws;
+
+        // Keep track of whether we've shown the Order Created message
+        let orderCreatedShown = false;
+
+        function addMessage(message, type = 'info') {
+            const messagesContainer = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = message;
+            messageDiv.className = `message ${type}`;
+
+            if (message === 'Order Created') {
+                // If Order Created, always insert at the top
+                if (!orderCreatedShown) {
+                    messagesContainer.insertBefore(messageDiv, messagesContainer.firstChild);
+                    orderCreatedShown = true;
+                }
+            } else {
+                // For other messages, append at the end
+                messagesContainer.appendChild(messageDiv);
+            }
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // Get the order ID from the URL query parameter
+        function getOrderIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('orderId');
+        }
+
+        // Connect to WebSocket when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const orderId = getOrderIdFromUrl();
+            if (!orderId) {
+                addMessage('No order ID provided', 'error');
+                return;
+            }
+
+            document.getElementById('order-id').textContent = orderId;
+
+            // Create WebSocket connection
+            ws = new WebSocket(`ws://${window.location.host}/ws/order/${orderId}`);
+
+            ws.onopen = () => {
+                // Connection established, but we'll wait for the Order Created message
+                console.log('WebSocket connection established');
+                // Reset the order created flag on new connections
+                orderCreatedShown = false;
+
+                // Start sending pings every 5 minutes to keep connection alive
+                setInterval(() => {
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ type: 'ping' }));
+                    }
+                }, 5 * 60 * 1000); // 5 minutes
+            };
+
+            ws.onmessage = (event) => {
+                console.log('Received WebSocket message:', event.data);
+                const data = JSON.parse(event.data);
+                console.log('Parsed data:', data);
+                
+                if (data.type === 'connected' && data.message.includes(orderId)) {
+                    addMessage('Order Created');
+                } else if (data.type === 'order-update' && data.orderId === orderId) {
+                    addMessage(`Order Status: ${data.status}`);
+                }
+            };
+
+            ws.onerror = (error) => {
+                addMessage('Error connecting to order tracking system', 'error');
+            };
+
+            ws.onclose = () => {
+                addMessage('Connection to order tracking system closed', 'error');
+            };
+        });
+    </script>
+</body>
+</html>

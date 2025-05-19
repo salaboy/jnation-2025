@@ -1,37 +1,41 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>WebSocket Order Test</title>
+    <title>Order Status</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
         #messages {
-            margin: 20px;
+            margin: 20px 0;
             padding: 20px;
             border: 1px solid #ccc;
-            height: 300px;
-            overflow-y: auto;
+            border-radius: 8px;
+            background-color: #f9f9f9;
         }
         .message {
-            margin: 5px 0;
-            padding: 5px;
+            margin: 10px 0;
+            padding: 10px;
             border-radius: 4px;
+            background-color: #e8f5e9;
         }
-        .received { background-color: #e8f5e9; }
-        .error { background-color: #ffebee; }
+        .error {
+            background-color: #ffebee;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
     </style>
 </head>
 <body>
-    <h1>WebSocket Order Test</h1>
-    
-    <div>
-        <h3>Connect to Order</h3>
-        <input type="text" id="orderId" placeholder="Enter order ID" value="test-order-123">
-        <button onclick="connectWebSocket()">Connect</button>
-        <button onclick="disconnectWebSocket()">Disconnect</button>
-    </div>
-
-    <div>
-        <h3>Send Test Update</h3>
-        <button onclick="sendTestUpdate()">Send Update</button>
+    <h1>Order Status</h1>
+    <div id="order-info">
+        <h2>Processing Order: <span id="order-id"></span></h2>
     </div>
 
     <div id="messages"></div>
@@ -43,73 +47,42 @@
             const messagesDiv = document.getElementById('messages');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${type}`;
-            messageDiv.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            messageDiv.textContent = message;
             messagesDiv.appendChild(messageDiv);
             messagesDiv.scrollTop = messagesDiv.scrollHeight;
         }
 
-        function connectWebSocket() {
-            const orderId = document.getElementById('orderId').value;
-            
-            // Close existing connection if any
-            if (ws) {
-                ws.close();
-            }
+        // Get the order ID from the URL path
+        function getOrderIdFromUrl() {
+            const pathParts = window.location.pathname.split('/');
+            return pathParts[pathParts.length - 1];
+        }
 
-            // Create new WebSocket connection
+        // Connect to WebSocket when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            const orderId = getOrderIdFromUrl();
+            document.getElementById('order-id').textContent = orderId;
+
+            // Create WebSocket connection
             ws = new WebSocket(`ws://${window.location.host}/ws/order/${orderId}`);
 
             ws.onopen = () => {
-                addMessage('WebSocket connected');
+                addMessage('Connected to order tracking system');
             };
 
             ws.onmessage = (event) => {
                 const data = JSON.parse(event.data);
-                addMessage(`Received: ${JSON.stringify(data)}`);
+                addMessage(`Order Status: ${data.status || 'Updated'}`);
             };
 
             ws.onerror = (error) => {
-                addMessage(`WebSocket error: ${error.message}`, 'error');
+                addMessage('Error connecting to order tracking system', 'error');
             };
 
             ws.onclose = () => {
-                addMessage('WebSocket disconnected', 'error');
-                ws = null;
+                addMessage('Connection to order tracking system closed', 'error');
             };
-        }
-
-        function disconnectWebSocket() {
-            if (ws) {
-                ws.close();
-                ws = null;
-            }
-        }
-
-        function sendTestUpdate() {
-            const orderId = document.getElementById('orderId').value;
-            
-            fetch('/update-order', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    orderId: orderId,
-                    status: 'processing',
-                    details: {
-                        message: 'Test update',
-                        timestamp: new Date().toISOString()
-                    }
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                addMessage(`Update sent: ${JSON.stringify(data)}`);
-            })
-            .catch(error => {
-                addMessage(`Error sending update: ${error.message}`, 'error');
-            });
-        }
+        });
     </script>
 </body>
 </html>

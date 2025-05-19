@@ -52,9 +52,9 @@ app.use("*", async (c, next) => {
 
 app.get("/api/geese", async (c) => {
   // Only handle non-proxy requests with this handler
-  if (c.req.path.startsWith(PROXY_ENDPOINT)) {
-    return next();
-  }
+  // if (c.req.path.startsWith(PROXY_ENDPOINT)) {
+  //   return next();
+  // }
   // Get or create user ID from cookie
   let userId = getCookie(c, 'user_id');
   if (!userId) {
@@ -151,9 +151,9 @@ app.get("/api/geese", async (c) => {
 // New endpoints for order updates
 app.get("/ws/order/:orderId", async (c) => {
   // Only handle non-proxy requests with this handler
-  if (c.req.path.startsWith(PROXY_ENDPOINT)) {
-    return next();
-  }
+  // if (c.req.path.startsWith(PROXY_ENDPOINT)) {
+  //   return next();
+  // }
   if (c.req.header("upgrade") !== "websocket") {
     return c.text("Not a websocket request", 426);
   }
@@ -190,9 +190,9 @@ export { OrderUpdateService };
 app.get("/openapi.json", c => {
   // @ts-expect-error - @fiberplane/hono is in beta and still not typed correctly
   // Only handle non-proxy requests with this handler
-  if (c.req.path.startsWith(PROXY_ENDPOINT)) {
-    return next();
-  }
+  // if (c.req.path.startsWith(PROXY_ENDPOINT)) {
+  //   return next();
+  // }
   return c.json(createOpenAPISpec(app, {
     openapi: "3.0.0",
     info: {
