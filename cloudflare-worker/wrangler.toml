@@ -39,7 +39,7 @@ preview_id = "ed11306cc5a14282b14178bb75fb688f"
 
 [[r2_buckets]]
 bucket_name = "goose-store"
-binding = "goose_store"
+binding = "GOOSE_STORE"
 
 # [ai]
 # binding = "AI"

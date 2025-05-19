@@ -6,11 +6,11 @@ body {
   font-family: 'Press Start 2P', cursive;
   margin: 0;
   padding: 20px;
-  background-color: #44392f;
+  background-color: #1c1613; /* #44392f */
   background-image: linear-gradient(45deg, #1C1613 25%, transparent 25%),
     linear-gradient(-45deg, #1C1613 25%, transparent 25%),
     linear-gradient(45deg, transparent 75%, #1C1613 75%),
-    linear-gradient(-45deg, transparent 75%, #1C1613 75%);
+    linear-gradient(-45deg, transparent 75%, #1c1613 75%);
   background-size: 20px 20px;
   color:  #f15e29;
   line-height: 1.6; 
@@ -22,7 +22,7 @@ header {
   justify-content: space-between;
   align-items: center;
   padding: 10px 20px;
-  background-color: #222222;
+  background-color: #44392f;
   border: 4px solid #f15e29;
   border-style: double;
   margin-bottom: 20px;
@@ -31,14 +31,14 @@ header {
 
 .store-title {
   margin: 0;
-  color: #f15e29;
+  color: #ffffff;
   /*color: #333;*/
 }
 
 /* Buttons */
 .cart-button {
   padding: 8px 16px;
-  background-color: #1c1613;
+  background-color: #ffffff;
   color:  #f15e29;
   border: 2px solid #f15e29;
   cursor: pointer;
@@ -46,7 +46,7 @@ header {
   font-family: 'Press Start 2P', cursive;
   font-size: 12px;
   image-rendering: pixelated;
-  text-shadow: 2px 2px #003300;
+  /*text-shadow: 2px 2px #003300;*/
 }
 
 .cart-button:hover {
@@ -74,8 +74,29 @@ header {
 }
 
 /* Product cards */
+.image-container {
+  background-color: #ffffff;
+  padding: 20px;
+  border: 4px solid #f15e29;
+  border-style: double;
+  margin: 0 auto 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-width: 200px;
+  width: 80%;
+}
+
+.goose-image {
+  width: 100%;
+  height: auto;
+  max-height: 150px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
 .goose-card {
-  background-color: #222222;
+  background-color: #44392f;
   padding: 20px;
   border: 4px solid #f15e29;
   border-style: double;
@@ -101,7 +122,7 @@ header {
 }
 
 .goose-card .info {
-  color: #f15e29;;
+  color: #ffffff;;
   line-height: 1.5;
   font-size: 20px;
   font-family: 'VT323', monospace;

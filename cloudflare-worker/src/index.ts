@@ -26,6 +26,7 @@ type Bindings = {
   DB: D1Database;
   VISITORS: KVNamespace;
   ACTIVE_USERS: DurableObjectNamespace;
+  GOOSE_STORE: R2Bucket;
   ORDER_UPDATE_SERVICE: DurableObjectNamespace;
 };
 
@@ -98,7 +99,36 @@ app.get("/api/geese", async (c) => {
   const goose = await getProductByRegion(region, c.env.DB);
 
     // Calculate price using the pricing calculator
-    const pricing = calculatePrice(visitorStats.activeUsers, goose?.base_price ?? 0.5); // Default price if no goose found
+  const pricing = calculatePrice(visitorStats.activeUsers, goose?.base_price ?? 0.5); // Default price if no goose found
+
+  // Get the image for the current region
+  const imageName = `${region.toLowerCase().replace(/ /g, '-')}.svg`;
+  console.log('Fetching image for region:', region, 'filename:', imageName);
+  
+  // Try to get the image from R2
+  let imageData = null;
+  try {
+    // Get the image object
+    const imageObj = await c.env.GOOSE_STORE.get(imageName);
+    console.log('Image found:', !!imageObj);
+    
+    if (imageObj) {
+      const arrayBuffer = await imageObj.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+      imageData = {
+        contentType: imageObj.httpMetadata?.contentType || 'image/svg+xml',
+        data: `data:image/svg+xml;base64,${base64}`
+      };
+      console.log('Successfully loaded image for region:', region);
+    } else {
+      console.log('No image found for region:', region);
+    }
+  } catch (error) {
+    console.error('Error reading local file:', error);
+  }
+  if (imageData) {
+    console.log('Final image data structure:', imageData);
+  }
 
   return c.json({
     ip,
@@ -109,12 +139,14 @@ app.get("/api/geese", async (c) => {
       postal,
       timezone,
     },
+    image: imageData,
     pricing,
-    goose,  // Will be null if no goose exists for this region
+    goose, 
     stats,
     browserLanguage,
   });
 });
+
 
 // New endpoints for order updates
 app.get("/ws/order/:orderId", async (c) => {

@@ -75,6 +75,8 @@
         // Function to render content
         function renderContent(data) {
           try {
+            console.log('Full data:', data);
+            console.log('Image data:', data.image);
             const currentRegionElm = document.getElementById("current-region");
             if (currentRegionElm) currentRegionElm.textContent = data.location.region;
             document.getElementById("most-active-region").textContent = data.stats.mostActiveRegion;
@@ -86,6 +88,11 @@
             if (data.goose) {
               gooseContainer.innerHTML = `
                 <div class="goose-card">
+                  ${data.image ? `
+                    <div class="image-container">
+                      <img src="${data.image.data}" alt="${data.goose.name}" class="goose-image">
+                    </div>
+                  ` : ''}
                   <h2>${data.goose.name}</h2>
                   <div class="price">${formatPrice(data.pricing.currentPrice)}</div>
                   <p class="info">${data.goose.info}</p>
