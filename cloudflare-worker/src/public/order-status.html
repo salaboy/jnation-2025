@@ -43,8 +43,6 @@
     <script>
         let ws;
 
-        // Keep track of whether we've shown the Order Created message
-        let orderCreatedShown = false;
 
         function addMessage(message, type = 'info') {
             const messagesContainer = document.getElementById('messages');
@@ -52,16 +50,8 @@
             messageDiv.textContent = message;
             messageDiv.className = `message ${type}`;
 
-            if (message === 'Order Created') {
-                // If Order Created, always insert at the top
-                if (!orderCreatedShown) {
-                    messagesContainer.insertBefore(messageDiv, messagesContainer.firstChild);
-                    orderCreatedShown = true;
-                }
-            } else {
-                // For other messages, append at the end
-                messagesContainer.appendChild(messageDiv);
-            }
+            // Append message at the end
+            messagesContainer.appendChild(messageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
@@ -92,10 +82,7 @@
                     console.log('Parsed data:', data);
                     
                     if (data.type === 'connected') {
-                        addMessage('Connected to order tracking system');
-                        if (!orderCreatedShown) {
-                            addMessage('Order Created');
-                        }
+                        // Connection established
                     } else if (data.type === 'order-update') {
                         addMessage(`Order Status: ${data.status}`);
                     } else if (data.type === 'error') {
