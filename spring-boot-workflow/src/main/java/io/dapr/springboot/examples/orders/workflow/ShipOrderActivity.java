@@ -50,11 +50,6 @@ public class ShipOrderActivity implements WorkflowActivity {
     order.setShipped(true);
     ordersStore.addOrder(order);
     logger.info("Order: " + order.getId() + " has been shipped.");
-    try {
-      Thread.sleep(5000);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
     HttpEntity<OrderUpdate> request =
             new HttpEntity<OrderUpdate>(new OrderUpdate(order.getId(), "Shipping", new Details("Shipping the order", new Date())));
     String orderUpdateString =

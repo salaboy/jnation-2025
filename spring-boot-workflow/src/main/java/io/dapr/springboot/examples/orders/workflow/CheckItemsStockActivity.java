@@ -57,7 +57,7 @@ public class CheckItemsStockActivity implements WorkflowActivity {
             new HttpEntity<OrderUpdate>(new OrderUpdate(order.getId(), "Checking Stock", new Details("Checking Stock in Warehouse", new Date())));
     String orderUpdateString =
             restTemplate.postForObject("http://localhost:8787/update-order", request, String.class);
-    
+
     logger.info("Update Order result: " + orderUpdateString );
     return order;
   }
