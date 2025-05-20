@@ -36,8 +36,6 @@ public class OrdersRestController {
 
   private final Logger logger = LoggerFactory.getLogger(OrdersRestController.class);
 
-  private final SimpMessagingTemplate simpMessagingTemplate;
-
   @Value("${PUBLIC_IP:localhost:8080}")
   private String publicIp;
 
@@ -48,11 +46,6 @@ public class OrdersRestController {
   private OrdersStore orderStore;
 
   private Map<String, String> ordersWorkflows = new HashMap<>();
-
-
-  public OrdersRestController(SimpMessagingTemplate simpMessagingTemplate) {
-    this.simpMessagingTemplate = simpMessagingTemplate;
-  }
 
   /**
    * Track customer endpoint.
@@ -66,7 +59,7 @@ public class OrdersRestController {
     logger.info("Workflow instance " + instanceId + " started");
     order.setWorkflowId(instanceId);
     ordersWorkflows.put(order.getId(), instanceId);
-    emitWSEvent(new Event(order));
+    //emitWSEvent(new Event(order));
     return order;
   }
 
@@ -87,18 +80,9 @@ public class OrdersRestController {
     }
   }
 
-
-
   @GetMapping("/orders")
   public Collection<Order> getOrders() {
     return orderStore.getOrders();
-  }
-
-
-  private void emitWSEvent(Event event) {
-    System.out.println("Emitting Event via WS: " + event.toString());
-    simpMessagingTemplate.convertAndSend("/topic/events",
-            event);
   }
 
   public record Event(Order order) {

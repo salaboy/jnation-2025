@@ -10,9 +10,10 @@
     <relativePath/> <!-- lookup parent from repository -->
   </parent>
 
-  <artifactId>spring-boot-workflow</artifactId>
-  <name>spring-boot-workflow</name>
-  <description>Spring Boot, Testcontainers and Dapr Integration Examples :: Workflow Example</description>
+  <artifactId>warehouse-service</artifactId>
+  <name>warehouse-service</name>
+  <description>Warehouse Service</description>
+  <version>1.0.0</version>
 
   <properties>
     <!-- <dapr.version>0.15.0-SNAPSHOT</dapr.version> -->

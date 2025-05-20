@@ -13,6 +13,7 @@ limitations under the License.
 
 package io.dapr.springboot.examples.orders.workflow;
 
+
 import io.dapr.springboot.examples.orders.Details;
 import io.dapr.springboot.examples.orders.Order;
 import io.dapr.springboot.examples.orders.OrderUpdate;
@@ -22,6 +23,7 @@ import io.dapr.workflows.WorkflowActivityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -29,33 +31,40 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Date;
 
 @Component
-public class ShipOrderActivity implements WorkflowActivity {
-
-  private final Logger logger = LoggerFactory.getLogger(ShipOrderActivity.class);
-
-  private final OrdersStore ordersStore;
-
-  public ShipOrderActivity(OrdersStore ordersStore) {
-    this.ordersStore = ordersStore;
-  }
+public class CheckItemsStockActivity implements WorkflowActivity {
 
   @Autowired
   private RestTemplate restTemplate;
 
+  private final Logger logger = LoggerFactory.getLogger(CheckItemsStockActivity.class);
+  private final OrdersStore ordersStore;
+
+  public CheckItemsStockActivity(OrdersStore ordersStore) {
+    this.ordersStore = ordersStore;
+  }
+
+  @Value("${WORKER_URL:http://localhost:8787}")
+  private String workerURL;
+
   @Override
   public Object run(WorkflowActivityContext ctx) {
     Order order = ctx.getInput(Order.class);
-    //Let's get the hydrate the real customer from the CustomerStore
-    order = ordersStore.getOrder(order.getId());
-    order.setShipped(true);
+    logger.info("Item: " + order.getItem() + " is in stock.");
+    order.setInStock(true);
     ordersStore.addOrder(order);
-    logger.info("Order: " + order.getId() + " has been shipped.");
+    try {
+      Thread.sleep(5000);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
     HttpEntity<OrderUpdate> request =
-            new HttpEntity<OrderUpdate>(new OrderUpdate(order.getId(), "Shipping", new Details("Shipping the order", new Date())));
+            new HttpEntity<OrderUpdate>(new OrderUpdate(order.getId(), "Checking Stock", new Details("Checking Stock in Warehouse", new Date())));
     String orderUpdateString =
-            restTemplate.postForObject("http://localhost:8787/update-order", request, String.class);
+            restTemplate.postForObject(workerURL+"/update-order", request, String.class);
+
     logger.info("Update Order result: " + orderUpdateString );
     return order;
   }
+
 
 }

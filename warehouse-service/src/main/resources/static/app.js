@@ -27,7 +27,7 @@ stompClient.onConnect = (frame) => {
     setConnected(true);
     console.log('Connected: ' + frame);
     stompClient.subscribe('/topic/events', (event) => {
-        console.log(JSON.parse(event.body));
+        //console.log(JSON.parse(event.body));
         showEvent(event.body);
 
     });
@@ -71,6 +71,9 @@ function approveOrder(orderId) {
         }
     });
 
+    $("#"+orderId).remove();
+
+
 }
 
 function disconnect() {
@@ -83,8 +86,9 @@ function disconnect() {
 
 function createOrderEntry(order) {
     console.log("creating order entry");
+
     console.log(order);
-    var orderEntry = "<div>" +
+    var orderEntry = "<div id=\""+ order.order.id +"\">" +
         "<p>Id: <strong>" + order.order.id + "</strong></p>" +
         "<p>Item: <strong>" + order.order.item + "</strong></p>" +
         "<p>Amount: <strong>" + order.order.amount + "</strong></p>" +
@@ -95,12 +99,10 @@ function createOrderEntry(order) {
 }
 
 function showEvent(event) {
-
+    console.log(event);
     eventObject = JSON.parse(event);
-    console.log(eventObject)
+    //console.log(eventObject)
     $("#events").append(createOrderEntry(eventObject));
-
-
 }
 
 $(function () {

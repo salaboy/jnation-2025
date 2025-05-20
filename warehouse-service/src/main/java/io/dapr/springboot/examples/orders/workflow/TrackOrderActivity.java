@@ -23,6 +23,7 @@ import io.dapr.workflows.WorkflowActivityContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -30,34 +31,37 @@ import org.springframework.web.client.RestTemplate;
 import java.util.Date;
 
 @Component
-public class CheckItemsStockActivity implements WorkflowActivity {
+public class TrackOrderActivity implements WorkflowActivity {
+
+  private final Logger logger = LoggerFactory.getLogger(TrackOrderActivity.class);
+  private final OrdersStore ordersStore;
+
+  public TrackOrderActivity(OrdersStore ordersStore) {
+    this.ordersStore = ordersStore;
+  }
+
 
   @Autowired
   private RestTemplate restTemplate;
 
-  private final Logger logger = LoggerFactory.getLogger(CheckItemsStockActivity.class);
-  private final OrdersStore ordersStore;
-
-  public CheckItemsStockActivity(OrdersStore ordersStore) {
-    this.ordersStore = ordersStore;
-  }
+  @Value("${WORKER_URL:http://localhost:8787}")
+  private String workerURL;
 
   @Override
   public Object run(WorkflowActivityContext ctx) {
     Order order = ctx.getInput(Order.class);
-    logger.info("Item: " + order.getItem() + " is in stock.");
-    order.setInStock(true);
+    logger.info("Order: " + order.getId() + " stored for tracking.");
     ordersStore.addOrder(order);
+    HttpEntity<OrderUpdate> request =
+            new HttpEntity<OrderUpdate>(new OrderUpdate(order.getId(), "Processing", new Details("Processing the order", new Date())));
+
     try {
       Thread.sleep(5000);
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
-    HttpEntity<OrderUpdate> request =
-            new HttpEntity<OrderUpdate>(new OrderUpdate(order.getId(), "Checking Stock", new Details("Checking Stock in Warehouse", new Date())));
     String orderUpdateString =
-            restTemplate.postForObject("http://localhost:8787/update-order", request, String.class);
-
+            restTemplate.postForObject(workerURL+"/update-order", request, String.class);
     logger.info("Update Order result: " + orderUpdateString );
     return order;
   }
